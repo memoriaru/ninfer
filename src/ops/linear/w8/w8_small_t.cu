@@ -20,8 +20,8 @@ void launch_exact(const Tensor& x, const Weight& weight, Tensor& out, cudaStream
 
     const W8ContiguousOutput output{static_cast<__nv_bfloat16*>(out.data), Geometry::kOutputRows};
     constexpr int kBlocks = Geometry::kOutputRows / Schedule::kRowsPerCta;
-    w8_small_t_mma_kernel<Geometry, ActiveTokens, Schedule>
-        <<<kBlocks, Schedule::kThreads, 0, stream>>>(
+        W8_SMEM_OPT_IN((w8_small_t_mma_kernel<Geometry, ActiveTokens, Schedule, W8ContiguousOutput, W8SmallTMmaStoreEpilogue, W8SmallTMmaIdentityRows, false>), (w8_small_t_smem_bytes<Schedule>()));
+    w8_small_t_mma_kernel<Geometry, ActiveTokens, Schedule><<<kBlocks, Schedule::kThreads, w8_small_t_smem_bytes<Schedule>(), stream>>>(
             static_cast<const __nv_bfloat16*>(x.data),
             static_cast<const std::uint8_t*>(weight.qdata),
             static_cast<const std::uint8_t*>(weight.scales), output);

@@ -1,16 +1,22 @@
 cmake_minimum_required(VERSION 3.28)
 
-# The current implementation is compiled only for sm_120a. Set and validate the
-# architecture before CUDA compiler detection so CMake never injects a generic
-# host-toolchain default or accepts an unsupported target.
+# sm89 port: allow Ada (sm_89, RTX 4090) alongside the upstream sm_120a target.
+# NVFP4 kernels require Blackwell (FP4 tensor cores + TMA + setmaxnreg) and are
+# excluded from the build on sm_89; the groupwise-int / q4-q5 / w8 paths stay.
 if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
   set(CMAKE_CUDA_ARCHITECTURES 120a CACHE STRING "CUDA architectures to build")
 endif()
-if(NOT CMAKE_CUDA_ARCHITECTURES STREQUAL "120a")
+if(NOT CMAKE_CUDA_ARCHITECTURES MATCHES "^(89|120a)$")
   message(FATAL_ERROR
-    "NInfer supports only CMAKE_CUDA_ARCHITECTURES=120a; got "
+    "NInfer supports CMAKE_CUDA_ARCHITECTURES=120a or 89; got "
     "'${CMAKE_CUDA_ARCHITECTURES}'")
 endif()
+if(CMAKE_CUDA_ARCHITECTURES STREQUAL "120a")
+  set(NINFER_ENABLE_NVFP4 ON)
+else()
+  set(NINFER_ENABLE_NVFP4 OFF)
+endif()
+message(STATUS "NInfer: arch=${CMAKE_CUDA_ARCHITECTURES} NVFP4=${NINFER_ENABLE_NVFP4}")
 
 project(ninfer LANGUAGES C CXX CUDA)
 

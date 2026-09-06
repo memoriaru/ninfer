@@ -627,8 +627,11 @@ void validate_target_options(DeviceContext& device, const EngineOptions& options
         }
         break;
     }
-    if (device.compute_capability() != 120) {
-        throw std::invalid_argument("Qwen3.6 family runtime requires compute capability 12.0");
+    // sm89 port: also admit Ada (compute capability 8.9); NVFP4 artifacts remain
+    // Blackwell-only and are rejected earlier by the dispatch layer.
+    if (device.compute_capability() != 120 && device.compute_capability() != 89) {
+        throw std::invalid_argument(
+            "Qwen3.6 family runtime requires compute capability 12.0 or 8.9");
     }
 }
 
